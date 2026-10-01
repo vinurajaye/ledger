@@ -1,0 +1,728 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Fixed Deposit Ledger</title>
+<meta name="description" content="Read-only view of the fixed deposit ledger.">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
+<link rel="icon" href="icon-192.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="FD Ledger">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="theme-color" content="#0A6B5B">
+<meta name="robots" content="noindex, nofollow">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap">
+<style>
+:root{
+  --bg:#EDF0EF; --surface:#FFFFFF; --surface-2:#F4F7F6; --surface-3:#EAEFED;
+  --line:#D2DBD8; --hair:#E4EAE8;
+  --ink:#101A18; --muted:#576763; --faint:#84918D;
+  --accent:#0A6B5B; --accent-2:#0E8C76; --accent-soft:#DFEFEB; --accent-ink:#064A3F;
+  --ok:#2C7A4C; --ok-soft:#E1F1E6;
+  --warn:#9C5407; --warn-soft:#FBEEDC;
+  --crit:#A4281F; --crit-soft:#FAE5E2;
+  --brass:#7E6018; --brass-soft:#F4EEDC;
+  --shadow:0 1px 2px rgba(16,26,24,.05), 0 8px 24px -12px rgba(16,26,24,.18);
+  --r:10px;
+  --mono:"IBM Plex Mono",ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;
+  --sans:"Archivo",system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    color-scheme: dark;
+    --bg:#0A100F; --surface:#131C1A; --surface-2:#18221F; --surface-3:#1E2A27;
+    --line:#2A3835; --hair:#202D2A;
+    --ink:#E6EDEA; --muted:#9AA9A4; --faint:#6F807B;
+    --accent:#3FBFA3; --accent-2:#5BD3B8; --accent-soft:#11302A; --accent-ink:#93E2CF;
+    --ok:#52B87A; --ok-soft:#12291C;
+    --warn:#DFA158; --warn-soft:#2E2413;
+    --crit:#E87F72; --crit-soft:#331A17;
+    --brass:#C8A44E; --brass-soft:#2B2515;
+    --shadow:0 1px 2px rgba(0,0,0,.4), 0 10px 28px -14px rgba(0,0,0,.7);
+  }
+}
+:root[data-theme="dark"]{
+  color-scheme: dark;
+  --bg:#0A100F; --surface:#131C1A; --surface-2:#18221F; --surface-3:#1E2A27;
+  --line:#2A3835; --hair:#202D2A;
+  --ink:#E6EDEA; --muted:#9AA9A4; --faint:#6F807B;
+  --accent:#3FBFA3; --accent-2:#5BD3B8; --accent-soft:#11302A; --accent-ink:#93E2CF;
+  --ok:#52B87A; --ok-soft:#12291C;
+  --warn:#DFA158; --warn-soft:#2E2413;
+  --crit:#E87F72; --crit-soft:#331A17;
+  --brass:#C8A44E; --brass-soft:#2B2515;
+  --shadow:0 1px 2px rgba(0,0,0,.4), 0 10px 28px -14px rgba(0,0,0,.7);
+}
+*{box-sizing:border-box}
+[hidden]{display:none!important}
+html,body{margin:0}
+html{padding-top:env(safe-area-inset-top,0px); padding-bottom:env(safe-area-inset-bottom,0px)}
+body{background:var(--bg); color:var(--ink); font-family:var(--sans); font-size:14px;
+  line-height:1.5; -webkit-font-smoothing:antialiased}
+h1,h2,h3{margin:0; text-wrap:balance; font-weight:600; letter-spacing:-.015em}
+:focus-visible{outline:2px solid var(--accent); outline-offset:2px; border-radius:4px}
+@media (prefers-reduced-motion: reduce){*{animation:none!important; transition:none!important}}
+.wrap{max-width:1100px; margin:0 auto; padding-inline:20px}
+@media(max-width:620px){.wrap{padding-inline:16px}}
+
+/* ---------- gate ---------- */
+#gate{min-height:100svh; display:grid; place-items:center; padding:24px}
+#gate form{background:var(--surface); border:1px solid var(--line); border-radius:14px; padding:26px;
+  width:100%; max-width:370px; box-shadow:var(--shadow)}
+.mark{width:40px; height:40px; border-radius:11px; background:var(--accent); color:#fff;
+  display:grid; place-items:center; font-family:var(--mono); font-weight:700; font-size:15px; margin-bottom:16px}
+:root[data-theme="dark"] .mark{color:#08201C}
+@media(prefers-color-scheme:dark){:root:not([data-theme="light"]) .mark{color:#08201C}}
+#gate h1{font-size:19px; margin-bottom:4px}
+#gate p{color:var(--muted); font-size:13px; margin:0 0 20px}
+label{display:block; font-size:11px; font-weight:700; letter-spacing:.06em; text-transform:uppercase;
+  color:var(--muted); margin-bottom:6px}
+input[type=password],input[type=text]{width:100%; font:inherit; padding:11px 13px; border:1px solid var(--line);
+  border-radius:9px; background:var(--bg); color:var(--ink)}
+input:focus{outline:2px solid var(--accent); outline-offset:-1px}
+.remember{display:flex; gap:9px; align-items:center; margin-top:13px; font-size:13px; color:var(--muted); cursor:pointer}
+.remember input{width:16px; height:16px; margin:0; accent-color:var(--accent)}
+button.go{width:100%; margin-top:16px; font:inherit; font-weight:600; padding:12px; border:0;
+  border-radius:9px; background:var(--accent); color:#fff; cursor:pointer}
+:root[data-theme="dark"] button.go{color:#062019}
+@media(prefers-color-scheme:dark){:root:not([data-theme="light"]) button.go{color:#062019}}
+button.go[disabled]{opacity:.6; cursor:progress}
+.err{margin-top:14px; font-size:13px; color:var(--crit); background:var(--crit-soft);
+  border:1px solid var(--crit); border-radius:8px; padding:9px 12px}
+
+/* ---------- app ---------- */
+header.top{position:sticky; top:0; z-index:40; background:color-mix(in srgb, var(--bg) 88%, transparent);
+  backdrop-filter:blur(10px); border-bottom:1px solid var(--line)}
+.top-in{display:flex; align-items:center; gap:12px; padding-block:12px; flex-wrap:wrap}
+.brand{display:flex; align-items:center; gap:10px; margin-right:auto; min-width:0}
+.brand .mark{width:30px; height:30px; border-radius:8px; font-size:13px; margin:0}
+.brand h1{font-size:16.5px}
+.brand .sub{font-size:11.5px; color:var(--faint)}
+.btn{font:inherit; font-weight:500; font-size:13px; border:1px solid var(--line); background:var(--surface);
+  color:var(--ink); padding:7px 12px; border-radius:8px; cursor:pointer; white-space:nowrap}
+.btn:hover{background:var(--surface-2)}
+nav.tabs{display:flex; gap:2px; border-bottom:1px solid var(--line); overflow-x:auto; scrollbar-width:none}
+nav.tabs::-webkit-scrollbar{display:none}
+.tab{font:inherit; font-size:13px; font-weight:500; background:none; border:0; cursor:pointer; color:var(--muted);
+  padding:10px 13px; border-bottom:2px solid transparent; margin-bottom:-1px; white-space:nowrap}
+.tab[aria-selected="true"]{color:var(--ink); border-bottom-color:var(--accent)}
+main{padding-block:20px 60px}
+section.view{display:grid; gap:18px; grid-template-columns:minmax(0,1fr)}
+section.view > *{min-width:0}
+.card{background:var(--surface); border:1px solid var(--line); border-radius:var(--r); box-shadow:var(--shadow); min-width:0}
+.card-h{display:flex; align-items:center; gap:10px; padding:13px 16px; border-bottom:1px solid var(--hair); flex-wrap:wrap}
+.card-h h2{font-size:13px; letter-spacing:.06em; text-transform:uppercase; color:var(--muted); font-weight:600}
+.card-h .spacer{margin-left:auto}
+.card-b{padding:16px}
+.note{font-size:12px; color:var(--faint)}
+
+.freshness{display:flex; gap:9px; align-items:center; flex-wrap:wrap; border-radius:var(--r);
+  padding:10px 14px; font-size:13px; border:1px solid}
+.freshness.ok{background:var(--accent-soft); border-color:var(--accent); color:var(--accent-ink)}
+.freshness.old{background:var(--warn-soft); border-color:var(--warn); color:var(--warn)}
+.freshness .bt{font-weight:700}
+.freshness .spacer{margin-left:auto}
+
+.kpis{display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:12px; min-width:0}
+@media(max-width:860px){.kpis{grid-template-columns:minmax(0,1fr)}}
+.kpi{background:var(--surface); border:1px solid var(--line); border-radius:var(--r); padding:15px 17px 16px;
+  box-shadow:var(--shadow); display:flex; flex-direction:column; gap:3px; min-width:0}
+.kpi .lbl{font-size:11px; letter-spacing:.07em; text-transform:uppercase; color:var(--faint); font-weight:600}
+.kpi .val{font-family:var(--mono); font-variant-numeric:tabular-nums; font-size:27px; font-weight:600;
+  letter-spacing:-.03em; line-height:1.15; overflow-wrap:anywhere}
+@media(max-width:1060px){.kpi .val{font-size:23px}}
+.kpi .foot{font-size:12px; color:var(--muted); margin-top:2px}
+.kpi.accent{border-color:var(--accent); background:linear-gradient(to bottom, var(--accent-soft), var(--surface) 72%)}
+.kpi.accent .val{color:var(--accent-ink)}
+
+.bars{display:grid; gap:9px}
+.bar-row{display:grid; grid-template-columns:minmax(84px,auto) 1fr minmax(118px,auto); gap:11px; align-items:center; font-size:13px}
+.bar-row .bl{font-weight:500; overflow:hidden; text-overflow:ellipsis; white-space:nowrap}
+.bar-track{height:9px; background:var(--surface-3); border-radius:5px; overflow:hidden}
+.bar-fill{height:100%; background:var(--accent); border-radius:5px; min-width:3px}
+.bar-row .bv{text-align:right; font-family:var(--mono); font-variant-numeric:tabular-nums; font-size:12.5px}
+.bar-row .bp{color:var(--faint); font-size:11.5px; margin-left:6px}
+.seg{display:inline-flex; border:1px solid var(--line); border-radius:8px; overflow:hidden; background:var(--surface)}
+.seg button{font:inherit; font-size:12px; font-weight:500; background:none; border:0; padding:5px 11px;
+  cursor:pointer; color:var(--muted); border-right:1px solid var(--line)}
+.seg button:last-child{border-right:0}
+.seg button[aria-pressed="true"]{background:var(--accent-soft); color:var(--accent-ink)}
+
+.pill{display:inline-flex; align-items:center; gap:5px; font-size:11.5px; font-weight:600; padding:2px 8px;
+  border-radius:999px; border:1px solid; white-space:nowrap}
+.pill.ok{color:var(--ok); border-color:var(--ok); background:var(--ok-soft)}
+.pill.warn{color:var(--warn); border-color:var(--warn); background:var(--warn-soft)}
+.pill.crit{color:var(--crit); border-color:var(--crit); background:var(--crit-soft)}
+.pill.mute{color:var(--muted); border-color:var(--line); background:var(--surface-2)}
+.pill .dot{width:6px; height:6px; border-radius:50%; background:currentColor; flex:none}
+.folio{font-family:var(--mono); font-size:12px; font-weight:500; color:var(--brass); background:var(--brass-soft);
+  border:1px solid color-mix(in srgb,var(--brass) 30%, transparent); padding:1px 6px; border-radius:5px; display:inline-block}
+.folio.none{color:var(--faint); background:var(--surface-2); border-color:var(--line)}
+
+.alert{border-radius:var(--r); border:1px solid; overflow:hidden; min-width:0}
+.alert.crit{border-color:var(--crit); background:var(--crit-soft)}
+.alert.warn{border-color:var(--warn); background:var(--warn-soft)}
+.alert-h{display:flex; align-items:center; gap:9px; padding:11px 16px; font-weight:600; font-size:13.5px}
+.alert.crit .alert-h{color:var(--crit)}
+.alert.warn .alert-h{color:var(--warn)}
+.alert-list{display:grid; gap:1px; background:var(--line)}
+.alert-row{background:var(--surface); display:grid; gap:4px 14px; padding:11px 16px;
+  grid-template-columns:minmax(0,1fr) auto; align-items:center; min-width:0}
+.alert-row > div{min-width:0}
+.alert-row .who{font-weight:600; font-size:13.5px; overflow-wrap:anywhere}
+.alert-row .meta{font-size:12px; color:var(--muted); overflow-wrap:anywhere}
+.alert-row .when{text-align:right; font-size:12.5px; font-weight:600}
+@media(max-width:560px){
+  .alert-row{grid-template-columns:1fr}
+  .alert-row .when{text-align:left; display:flex; gap:8px; align-items:baseline}
+}
+
+.tbl-wrap{overflow-x:auto}
+table.fds{width:100%; border-collapse:collapse; font-size:13px; min-width:860px}
+table.fds th{text-align:left; font-size:10.5px; letter-spacing:.07em; text-transform:uppercase; color:var(--faint);
+  font-weight:600; padding:9px 12px; border-bottom:1px solid var(--line); white-space:nowrap;
+  position:sticky; top:0; background:var(--surface); z-index:1}
+table.fds th.s{cursor:pointer; user-select:none}
+table.fds th .ar{color:var(--accent); font-size:9px}
+table.fds td{padding:10px 12px; border-bottom:1px solid var(--hair); vertical-align:middle}
+table.fds tbody tr:last-child td{border-bottom:0}
+td.r,th.r{text-align:right}
+.ent{font-weight:600; font-size:12.5px}
+.bnk{font-size:12.5px}
+.bnk small{display:block; color:var(--faint); font-size:11px}
+.amt{font-family:var(--mono); font-variant-numeric:tabular-nums; white-space:nowrap}
+.amt .cc{color:var(--faint); font-size:11px; margin-right:3px}
+tfoot td{padding:11px 12px; border-top:2px solid var(--line); font-weight:600; background:var(--surface-2)}
+.empty{padding:44px 20px; text-align:center; color:var(--muted)}
+@media(max-width:820px){
+  table.fds{min-width:0}
+  table.fds thead{display:none}
+  table.fds tbody tr{display:grid; grid-template-columns:minmax(0,1fr) auto; gap:2px 10px; padding:12px 14px;
+    border-bottom:1px solid var(--line)}
+  table.fds td{padding:1px 0; border:0; display:flex; gap:8px; align-items:baseline; min-width:0}
+  table.fds td > *{min-width:0; overflow-wrap:anywhere}
+  table.fds td::before{content:attr(data-l); font-size:10.5px; letter-spacing:.06em; text-transform:uppercase;
+    color:var(--faint); font-weight:600; min-width:88px; flex:none}
+  table.fds td.hdr{grid-column:1/-1; display:flex; justify-content:space-between; align-items:center; margin-bottom:5px}
+  table.fds td.hdr::before{content:none}
+  table.fds td.r{text-align:left}
+  tfoot{display:none}
+}
+
+.tl{display:grid; gap:2px}
+.tl-mo{display:grid; grid-template-columns:78px 1fr; gap:12px; padding:7px 0; border-bottom:1px solid var(--hair)}
+.tl-mo:last-child{border-bottom:0}
+.tl-lbl{font-size:12px; color:var(--muted); font-weight:500; padding-top:3px}
+.tl-lbl small{display:block; font-size:10.5px; color:var(--faint); font-family:var(--mono)}
+.tl-bar-wrap{display:flex; align-items:center; gap:9px; min-width:0}
+.tl-bar{height:20px; border-radius:4px; background:var(--accent); min-width:2px; flex:none}
+.tl-bar.soon{background:var(--warn)}
+.tl-bar.past{background:var(--crit)}
+.tl-val{font-family:var(--mono); font-variant-numeric:tabular-nums; font-size:12px; color:var(--muted); white-space:nowrap}
+.tl-empty{color:var(--faint); font-size:12px; padding-top:4px}
+</style>
+</head>
+<body>
+
+<div id="gate">
+  <form id="gateForm" autocomplete="on">
+    <div class="mark">FD</div>
+    <h1>Fixed Deposit Ledger</h1>
+    <p id="gateSub">Enter your passphrase to unlock this view.</p>
+    <label for="pass">Passphrase</label>
+    <input id="pass" type="password" autocomplete="current-password" autocapitalize="off"
+           autocorrect="off" spellcheck="false" enterkeyhint="go">
+    <label class="remember"><input type="checkbox" id="remember" checked>
+      <span>Stay unlocked on this device</span></label>
+    <button class="go" type="submit" id="goBtn">Unlock</button>
+    <div class="err" id="gateErr" hidden></div>
+  </form>
+</div>
+
+<div id="app" hidden>
+  <header class="top"><div class="wrap">
+    <div class="top-in">
+      <div class="brand">
+        <div class="mark">FD</div>
+        <div><h1>Fixed Deposit Ledger</h1><div class="sub" id="asOf"></div></div>
+      </div>
+      <button class="btn" id="btnTheme">&#9680; <span id="themeLbl">Auto</span></button>
+      <button class="btn" id="btnLock">Lock</button>
+    </div>
+    <nav class="tabs" role="tablist">
+      <button class="tab" role="tab" data-view="dash" aria-selected="true">Dashboard</button>
+      <button class="tab" role="tab" data-view="maturities" aria-selected="false">Maturities</button>
+      <button class="tab" role="tab" data-view="deposits" aria-selected="false">Deposits</button>
+    </nav>
+  </div></header>
+
+  <main class="wrap">
+    <section class="view" id="view-dash">
+      <div id="fresh"></div>
+      <div id="alerts"></div>
+      <div class="kpis" id="kpis"></div>
+      <div class="card">
+        <div class="card-h"><h2>Breakdown</h2><span class="spacer"></span>
+          <div class="seg" id="breakSeg">
+            <button data-by="entity" aria-pressed="true">Entity</button>
+            <button data-by="currency" aria-pressed="false">Currency</button>
+            <button data-by="bank" aria-pressed="false">Bank</button>
+          </div>
+        </div>
+        <div class="card-b" id="breakdown"></div>
+      </div>
+    </section>
+
+    <section class="view" id="view-maturities" hidden>
+      <div class="kpis" id="matKpis"></div>
+      <div class="card">
+        <div class="card-h"><h2>Maturing by month</h2></div>
+        <div class="card-b"><div class="tl" id="timeline"></div></div>
+      </div>
+    </section>
+
+    <section class="view" id="view-deposits" hidden>
+      <div class="card">
+        <div class="card-h"><h2>All deposits</h2><span class="note spacer" id="depCount"></span></div>
+        <div class="tbl-wrap"><table class="fds" id="tbl"></table></div>
+      </div>
+    </section>
+  </main>
+</div>
+
+<script>
+(function(){
+"use strict";
+
+const $  = (s,r) => (r||document).querySelector(s);
+const $$ = (s,r) => Array.from((r||document).querySelectorAll(s));
+
+function el(t,a,kids){
+  const n = document.createElement(t);
+  if (a) for (const k in a) {
+    const v = a[k];
+    if (v === null || v === undefined || v === false) continue;
+    if (k === "class") n.className = v;
+    else if (k === "text") n.textContent = v;
+    else if (k.slice(0,2) === "on") n.addEventListener(k.slice(2), v);
+    else n.setAttribute(k, v);
+  }
+  if (kids) (Array.isArray(kids)?kids:[kids]).forEach(c => {
+    if (c === null || c === undefined || c === false) return;
+    n.appendChild(typeof c === "string" ? document.createTextNode(c) : c);
+  });
+  return n;
+}
+
+/* ---------------- crypto ---------------- */
+
+const b64d = s => Uint8Array.from(atob(s), c => c.charCodeAt(0));
+
+async function deriveKey(passphrase, salt, iterations){
+  const base = await crypto.subtle.importKey(
+    "raw", new TextEncoder().encode(passphrase), "PBKDF2", false, ["deriveKey"]);
+  return crypto.subtle.deriveKey(
+    { name:"PBKDF2", salt, iterations, hash:"SHA-256" },
+    base, { name:"AES-GCM", length:256 }, false, ["decrypt"]);
+}
+
+async function decryptEnvelope(env, passphrase){
+  const salt = b64d(env.salt), iv = b64d(env.iv), ct = b64d(env.ct);
+  const key = await deriveKey(passphrase, salt, env.iterations || 310000);
+  const pt = await crypto.subtle.decrypt({ name:"AES-GCM", iv }, key, ct);
+  return JSON.parse(new TextDecoder().decode(pt));
+}
+
+/* ---------------- helpers ---------------- */
+
+const nf = (n,d) => {
+  if (typeof n !== "number" || !isFinite(n)) n = 0;
+  const dd = d === undefined ? 2 : d;
+  return n.toLocaleString("en-US",{minimumFractionDigits:dd, maximumFractionDigits:dd});
+};
+const lkr = n => "Rs " + nf(n,0);
+const lkr2 = n => "Rs " + nf(n,2);
+const compact = n => {
+  const a = Math.abs(n);
+  if (a >= 1e9) return "Rs " + nf(n/1e9,2) + " bn";
+  if (a >= 1e6) return "Rs " + nf(n/1e6,2) + " mn";
+  if (a >= 1e3) return "Rs " + nf(n/1e3,1) + " k";
+  return "Rs " + nf(n,0);
+};
+const pad2 = x => String(x).padStart(2,"0");
+const todayD = () => { const d = new Date(); d.setHours(0,0,0,0); return d; };
+const parseD = s => {
+  if (!s) return null;
+  const p = String(s).split("-").map(Number);
+  if (p.length !== 3 || !p[0]) return null;
+  const d = new Date(p[0], p[1]-1, p[2]); d.setHours(0,0,0,0);
+  return isNaN(d.getTime()) ? null : d;
+};
+const daysTo = s => { const d = parseD(s); return d === null ? null : Math.round((d - todayD())/86400000); };
+const fmtDate = s => { const d = parseD(s); return d ? d.toLocaleDateString("en-GB",{day:"2-digit",month:"short",year:"numeric"}) : "—"; };
+const fmtDateShort = s => { const d = parseD(s); return d ? d.toLocaleDateString("en-GB",{day:"2-digit",month:"short"}) : "—"; };
+
+const S = { data:null, view:"dash", breakBy:"entity", valuation:"today", sort:{key:"maturityDate",dir:"asc"} };
+
+const rateOf = c => {
+  const m = (S.data.rates || {}).map || {};
+  const r = m[c];
+  return (typeof r === "number" && r > 0) ? r : (c === "LKR" ? 1 : 0);
+};
+
+function calc(f){
+  const amount = Number(f.amount) || 0;
+  const annual = Number(f.rateAnnual) || 0;
+  const today = rateOf(f.currency);
+  const booked = Number(f.convRate) > 0 ? Number(f.convRate) : today;
+  const lkrBooked = Number(f.amountLkr) > 0 ? Number(f.amountLkr) : amount * booked;
+  const lkrToday = amount * today;
+  const value = S.valuation === "booked" ? lkrBooked : (today > 0 ? lkrToday : lkrBooked);
+  const vRate = S.valuation === "booked" ? booked : (today > 0 ? today : booked);
+  const intPerMonthCcy = amount * annual / 100 / 12;
+  const sd = parseD(f.startDate), md = parseD(f.maturityDate);
+  const tenorDays = (sd && md) ? Math.max(0, Math.round((md - sd)/86400000)) : 0;
+  const intAtMaturityCcy = tenorDays ? amount * annual/100 * (tenorDays/365) : 0;
+  return { amount, annual, today, booked, lkrBooked, lkrToday, value, vRate,
+           intPerMonthLkr: intPerMonthCcy * vRate, tenorDays,
+           maturityValueCcy: amount + (f.payout === "maturity" ? intAtMaturityCcy : 0),
+           intAtMaturityLkr: intAtMaturityCcy * vRate, dtm: daysTo(f.maturityDate) };
+}
+
+const isOpen = f => f.status !== "closed";
+const isFD = f => (f && f.kind === "savings") ? false : true;
+const bearsInterest = f => (Number(f.rateAnnual) || 0) > 0;
+const isMatured = f => { if (!isFD(f)) return false; const d = daysTo(f.maturityDate); return isOpen(f) && d !== null && d < 0; };
+const leadDays = () => Number((S.data.settings || {}).leadDays) || 3;
+const isDue = f => { if (!isFD(f)) return false; const d = daysTo(f.maturityDate); return isOpen(f) && d !== null && d >= 0 && d <= leadDays(); };
+
+function totals(list){
+  let value = 0, perMonth = 0;
+  list.forEach(f => { const c = calc(f); value += c.value; perMonth += c.intPerMonthLkr; });
+  return { value, perMonth };
+}
+
+/* ---------------- theme ---------------- */
+
+function applyTheme(t){
+  if (t === "auto") document.documentElement.removeAttribute("data-theme");
+  else document.documentElement.setAttribute("data-theme", t);
+  const lbl = $("#themeLbl");
+  if (lbl) lbl.textContent = t === "auto" ? "Auto" : t === "light" ? "Light" : "Dark";
+}
+let themePref = "auto";
+try { themePref = localStorage.getItem("fdview.theme") || "auto"; } catch(e){}
+applyTheme(themePref);
+
+/* ---------------- render ---------------- */
+
+function kpi(lbl, val, foot, accent, extra){
+  return el("div",{class:"kpi" + (accent?" accent":"")},[
+    el("div",{class:"lbl",text:lbl}), el("div",{class:"val",text:val}),
+    el("div",{class:"foot",text:foot}), extra || null ]);
+}
+
+function renderFreshness(){
+  const at = S.data.publishedAt ? new Date(S.data.publishedAt) : null;
+  const host = $("#fresh");
+  if (!at || isNaN(at.getTime())) { host.replaceChildren(); return; }
+  const hours = (Date.now() - at.getTime()) / 3600000;
+  const when = at.toLocaleString("en-GB",{day:"2-digit",month:"short",year:"numeric",hour:"2-digit",minute:"2-digit"});
+  const stale = hours > 72;
+  host.replaceChildren(el("div",{class:"freshness " + (stale ? "old" : "ok")},[
+    el("span",{class:"bt", text: stale ? "This copy is getting old" : "Read-only copy"}),
+    el("span",{text:"Published " + when + (stale ? " — open the ledger on the laptop to refresh it." : ".")})
+  ]));
+}
+
+function renderAlerts(){
+  const lead = leadDays();
+  const due = (S.data.fds||[]).filter(isDue).sort((a,b)=>String(a.maturityDate).localeCompare(String(b.maturityDate)));
+  const over = (S.data.fds||[]).filter(isMatured).sort((a,b)=>String(a.maturityDate).localeCompare(String(b.maturityDate)));
+  const blocks = [];
+  const block = (kind, glyph, title, rows) => el("div",{class:"alert " + kind},[
+    el("div",{class:"alert-h"},[ el("span",{text:glyph}), el("span",{text:title}) ]),
+    el("div",{class:"alert-list"}, rows.map(f => {
+      const c = calc(f), d = c.dtm;
+      const when = d < 0 ? Math.abs(d) + " day" + (Math.abs(d)===1?"":"s") + " ago"
+                 : d === 0 ? "today" : "in " + d + " day" + (d===1?"":"s");
+      return el("div",{class:"alert-row"},[
+        el("div",{},[
+          el("div",{class:"who"},[ el("span",{text:(f.entity?f.entity+" · ":"")+(f.bank||"")}), " ",
+            el("span",{class:"folio"+(f.folio?"":" none"), text:f.folio||"no folio"}) ]),
+          el("div",{class:"meta", text:f.currency+" "+nf(c.amount,2)+" @ "+nf(c.annual,2)+"% · "+lkr(c.value)})
+        ]),
+        el("div",{class:"when"},[ el("div",{text:fmtDate(f.maturityDate)}), el("div",{class:"note",text:when}) ])
+      ]);
+    }))
+  ]);
+  if (over.length) blocks.push(block("crit","▲", over.length + " matured and not yet renewed", over));
+  if (due.length)  blocks.push(block("warn","●", due.length + " maturing within " + lead + " day" + (lead===1?"":"s"), due));
+  $("#alerts").replaceChildren(blocks.length ? el("div",{style:"display:grid; gap:12px"}, blocks) : el("span"));
+}
+
+function renderKpis(){
+  const open = (S.data.fds||[]).filter(isOpen);
+  const t = totals(open);
+  const ccy = new Set(open.map(f => f.currency)).size;
+  const next = open.filter(f => { if (!isFD(f)) return false; const d = daysTo(f.maturityDate); return d !== null && d >= 0; })
+                   .sort((a,b)=>String(a.maturityDate).localeCompare(String(b.maturityDate)))[0];
+  const seg = el("div",{class:"seg", style:"margin-top:9px"},[
+    el("button",{"aria-pressed":String(S.valuation==="today"), onclick:()=>{S.valuation="today"; render();}, text:"Today's rate"}),
+    el("button",{"aria-pressed":String(S.valuation==="booked"), onclick:()=>{S.valuation="booked"; render();}, text:"Booked rate"})
+  ]);
+  $("#kpis").replaceChildren(
+    kpi("Total assets", lkr(t.value),
+        compact(t.value) + "  ·  " + open.length + " deposit" + (open.length===1?"":"s") + "  ·  " + ccy + (ccy===1?" currency":" currencies"),
+        true, seg),
+    kpi("Interest per month", lkr(t.perMonth), lkr(t.perMonth*12) + " a year, gross"
+        + (open.filter(f => !bearsInterest(f)).length
+           ? "  ·  " + open.filter(f => !bearsInterest(f)).length + " earning nothing" : "")),
+    kpi("Next maturity", next ? fmtDateShort(next.maturityDate) : "—",
+        next ? (daysTo(next.maturityDate) + " days · " + (next.entity?next.entity+" · ":"") + (next.bank||"")) : "Nothing pending")
+  );
+}
+
+function groupSum(list, keyFn){
+  const m = new Map();
+  list.forEach(f => {
+    const k = keyFn(f) || "—"; const c = calc(f);
+    const cur = m.get(k) || { value:0, n:0 };
+    cur.value += c.value; cur.n++; m.set(k, cur);
+  });
+  return Array.from(m, ([k,v]) => Object.assign({key:k}, v)).sort((a,b)=>b.value-a.value);
+}
+
+function renderBreakdown(){
+  const open = (S.data.fds||[]).filter(isOpen);
+  const total = totals(open).value;
+  const by = S.breakBy;
+  const rows = groupSum(open, f => by==="entity" ? f.entity : by==="currency" ? f.currency : f.bank);
+  $$("#breakSeg button").forEach(b => b.setAttribute("aria-pressed", String(b.dataset.by === by)));
+  const host = $("#breakdown");
+  if (!rows.length) { host.replaceChildren(el("div",{class:"note",text:"No deposits recorded."})); return; }
+  host.replaceChildren(el("div",{class:"bars"}, rows.map(r => {
+    const pct = total > 0 ? r.value/total*100 : 0;
+    return el("div",{class:"bar-row", title:r.key+" — "+lkr2(r.value)+" across "+r.n+" deposit"+(r.n===1?"":"s")},[
+      el("div",{class:"bl", text:r.key}),
+      el("div",{class:"bar-track"},[ el("div",{class:"bar-fill", style:"width:"+Math.max(pct,0.6).toFixed(2)+"%"}) ]),
+      el("div",{class:"bv"},[ el("span",{text:compact(r.value)}), el("span",{class:"bp", text:nf(pct,1)+"%"}) ])
+    ]);
+  })));
+}
+
+function renderMat(){
+  const open = (S.data.fds||[]).filter(isOpen);
+  const lead = leadDays();
+  const within = n => open.filter(f => { if (!isFD(f)) return false; const d = daysTo(f.maturityDate); return d !== null && d >= 0 && d <= n; });
+  $("#matKpis").replaceChildren(
+    kpi("Matured, unrenewed", lkr(totals(open.filter(isMatured)).value), open.filter(isMatured).length + " deposits"),
+    kpi("Within " + lead + " days", lkr(totals(within(lead)).value), within(lead).length + " deposits", true),
+    kpi("Next 90 days", lkr(totals(within(90)).value), within(90).length + " deposits")
+  );
+
+  const now = todayD();
+  const buckets = [];
+  const overdue = open.filter(isMatured);
+  if (overdue.length) buckets.push({ label:"Overdue", key:"past", list:overdue });
+  for (let i = 0; i < 12; i++) {
+    const d = new Date(now.getFullYear(), now.getMonth()+i, 1);
+    const k = d.getFullYear() + "-" + pad2(d.getMonth()+1);
+    buckets.push({ label:d.toLocaleDateString("en-GB",{month:"short"}), year:d.getFullYear(), key:k,
+      list: open.filter(f => isFD(f) && !isMatured(f) && String(f.maturityDate||"").slice(0,7) === k) });
+  }
+  const vals = buckets.map(b => totals(b.list).value);
+  const max = Math.max.apply(null, vals.concat([1]));
+  $("#timeline").replaceChildren(...buckets.map((b,i) => {
+    const v = vals[i], n = b.list.length, soon = b.list.some(isDue);
+    return el("div",{class:"tl-mo"},[
+      el("div",{class:"tl-lbl"},[ el("span",{text:b.label}), b.year ? el("small",{text:String(b.year)}) : null ]),
+      v > 0 ? el("div",{class:"tl-bar-wrap"},[
+          el("div",{class:"tl-bar"+(b.key==="past"?" past":soon?" soon":""),
+            style:"width:"+Math.max(2, v/max*76).toFixed(2)+"%",
+            title:b.label+" — "+lkr2(v)+" across "+n+" deposit"+(n===1?"":"s")}),
+          el("span",{class:"tl-val", text:compact(v)+"  ·  "+n})
+        ]) : el("div",{class:"tl-empty", text:"—"})
+    ]);
+  }));
+}
+
+function statusPill(f){
+  if (f.status === "closed") return el("span",{class:"pill mute", text:"Closed"});
+  if (!isFD(f)) return el("span",{class:"pill mute", text: bearsInterest(f) ? "Savings" : "No interest"});
+  const d = daysTo(f.maturityDate);
+  if (d === null) return el("span",{class:"pill mute", text:"No date"});
+  if (d < 0) return el("span",{class:"pill crit"},[ el("span",{class:"dot"}), "Matured "+Math.abs(d)+"d ago" ]);
+  if (d <= leadDays()) return el("span",{class:"pill warn"},[ el("span",{class:"dot"}), d===0?"Matures today":"In "+d+"d" ]);
+  return el("span",{class:"pill ok"},[ el("span",{class:"dot"}), "In "+d+"d" ]);
+}
+
+const COLS = [
+  { k:"folio", l:"Folio no" }, { k:"entity", l:"Entity" }, { k:"bank", l:"Bank" },
+  { k:"amount", l:"Amount", r:true }, { k:"lkr", l:"Amount LKR", r:true },
+  { k:"rateAnnual", l:"Int. rate", r:true }, { k:"maturityDate", l:"Maturity" },
+  { k:"int", l:"Interest/mo", r:true }
+];
+
+function renderTable(){
+  const list = (S.data.fds||[]).filter(isOpen).slice();
+  const k = S.sort.key, dir = S.sort.dir === "asc" ? 1 : -1;
+  list.sort((a,b) => {
+    let va, vb;
+    if (k === "lkr") { va = calc(a).value; vb = calc(b).value; }
+    else if (k === "int") { va = calc(a).intPerMonthLkr; vb = calc(b).intPerMonthLkr; }
+    else if (k === "amount") { va = Number(a.amount)||0; vb = Number(b.amount)||0; }
+    else if (k === "rateAnnual") { va = Number(a.rateAnnual)||0; vb = Number(b.rateAnnual)||0; }
+    else { va = String(a[k]||"").toLowerCase(); vb = String(b[k]||"").toLowerCase(); }
+    if (va < vb) return -dir; if (va > vb) return dir; return 0;
+  });
+  const t = totals(list);
+  $("#depCount").textContent = list.length + " open · " + lkr(t.value);
+  const tbl = $("#tbl");
+  if (!list.length) {
+    tbl.replaceChildren(el("tbody",{},[el("tr",{},[el("td",{},[el("div",{class:"empty",text:"No deposits recorded."})])])]));
+    return;
+  }
+  tbl.replaceChildren(
+    el("thead",{},[ el("tr",{}, COLS.map(c => {
+      const active = S.sort.key === c.k;
+      return el("th",{class:"s "+(c.r?"r":""), onclick:()=>{
+        if (S.sort.key === c.k) S.sort.dir = S.sort.dir === "asc" ? "desc" : "asc";
+        else { S.sort.key = c.k; S.sort.dir = (c.k==="maturityDate"||c.k==="folio"||c.k==="entity"||c.k==="bank")?"asc":"desc"; }
+        renderTable();
+      }},[ c.l, active ? el("span",{class:"ar", text:S.sort.dir==="asc"?" ▲":" ▼"}) : null ]);
+    })) ]),
+    el("tbody",{}, list.map(f => {
+      const c = calc(f);
+      return el("tr",{},[
+        el("td",{class:"hdr","data-l":"Folio no"},[ el("span",{class:"folio"+(f.folio?"":" none"), text:f.folio||"no folio"}), statusPill(f) ]),
+        el("td",{"data-l":"Entity"},[ el("span",{class:"ent",text:f.entity||"—"}) ]),
+        el("td",{"data-l":"Bank"},[ el("div",{class:"bnk"},[ el("span",{text:f.bank||"—"}), f.branch?el("small",{text:f.branch}):null ]) ]),
+        el("td",{class:"r","data-l":"Amount"},[ el("span",{class:"amt"},[ el("span",{class:"cc",text:f.currency}), nf(c.amount,2) ]) ]),
+        el("td",{class:"r","data-l":"Amount LKR"},[ el("span",{class:"amt",text:lkr(c.value)}) ]),
+        el("td",{class:"r","data-l":"Int. rate"},[ el("span",{class:"amt",text:nf(c.annual,2)+"%"}) ]),
+        el("td",{"data-l":"Maturity"},[ el("span",{class:"amt",style:"font-size:12.5px",text:fmtDate(f.maturityDate)}) ]),
+        el("td",{class:"r","data-l":"Interest/mo"},[ el("span",{class:"amt",text:lkr(c.intPerMonthLkr)}) ])
+      ]);
+    })),
+    el("tfoot",{},[ el("tr",{},[
+      el("td",{colspan:4, text:"Total — " + list.length + " deposits"}),
+      el("td",{class:"r",text:lkr(t.value)}), el("td",{}), el("td",{}),
+      el("td",{class:"r",text:lkr(t.perMonth)})
+    ]) ])
+  );
+}
+
+function render(){
+  const rates = S.data.rates || {};
+  $("#asOf").textContent = "CBSL rates " + fmtDate(rates.asOf) + " · view only";
+  if (S.view === "dash") { renderFreshness(); renderAlerts(); renderKpis(); renderBreakdown(); }
+  if (S.view === "maturities") renderMat();
+  if (S.view === "deposits") renderTable();
+}
+
+/* ---------------- unlock ---------------- */
+
+const STORE_KEY = "fdview.pass";
+let envelope = null;
+
+function showError(msg){
+  const e = $("#gateErr");
+  e.hidden = false;
+  e.textContent = msg;
+}
+
+async function unlock(passphrase, remember, silent){
+  const btn = $("#goBtn");
+  btn.disabled = true;
+  btn.textContent = "Unlocking…";
+  try {
+    const data = await decryptEnvelope(envelope, passphrase);
+    S.data = data;
+    if (remember) { try { localStorage.setItem(STORE_KEY, passphrase); } catch(e){} }
+    else { try { localStorage.removeItem(STORE_KEY); } catch(e){} }
+    $("#gate").hidden = true;
+    $("#app").hidden = false;
+    render();
+    return true;
+  } catch(err) {
+    try { localStorage.removeItem(STORE_KEY); } catch(e){}
+    if (!silent) showError("That passphrase does not unlock this copy. Check it and try again.");
+    return false;
+  } finally {
+    btn.disabled = false;
+    btn.textContent = "Unlock";
+  }
+}
+
+async function boot(){
+  try {
+    const r = await fetch("data.json", { cache:"no-store" });
+    if (!r.ok) throw new Error("http " + r.status);
+    envelope = await r.json();
+  } catch(e) {
+    $("#gateSub").textContent = "Could not load the published ledger.";
+    showError("No published copy was found at this address. Publish once from the laptop.");
+    $("#goBtn").disabled = true;
+    return;
+  }
+  if (!crypto || !crypto.subtle) {
+    showError("This browser cannot decrypt the ledger. It needs a secure (https) connection.");
+    $("#goBtn").disabled = true;
+    return;
+  }
+  if (envelope.publishedAt) {
+    $("#gateSub").textContent = "Published " +
+      new Date(envelope.publishedAt).toLocaleString("en-GB",
+        {day:"2-digit",month:"short",year:"numeric",hour:"2-digit",minute:"2-digit"}) +
+      ". Enter your passphrase to unlock it.";
+  }
+  let saved = null;
+  try { saved = localStorage.getItem(STORE_KEY); } catch(e){}
+  if (saved) await unlock(saved, true, true);
+}
+
+$("#gateForm").addEventListener("submit", e => {
+  e.preventDefault();
+  $("#gateErr").hidden = true;
+  const v = $("#pass").value;
+  if (!v) return;
+  unlock(v, $("#remember").checked, false);
+});
+
+$$(".tab").forEach(t => t.addEventListener("click", () => {
+  S.view = t.dataset.view;
+  $$(".tab").forEach(x => x.setAttribute("aria-selected", String(x === t)));
+  ["dash","maturities","deposits"].forEach(v => { $("#view-"+v).hidden = (v !== S.view); });
+  render();
+  window.scrollTo({ top:0, behavior:"smooth" });
+}));
+
+$$("#breakSeg button").forEach(b => b.addEventListener("click", () => { S.breakBy = b.dataset.by; renderBreakdown(); }));
+
+$("#btnTheme").addEventListener("click", () => {
+  const cur = document.documentElement.getAttribute("data-theme") || "auto";
+  const next = cur === "auto" ? "light" : cur === "light" ? "dark" : "auto";
+  applyTheme(next);
+  try { localStorage.setItem("fdview.theme", next); } catch(e){}
+});
+
+$("#btnLock").addEventListener("click", () => {
+  try { localStorage.removeItem(STORE_KEY); } catch(e){}
+  location.reload();
+});
+
+if ("serviceWorker" in navigator) {
+  window.addEventListener("load", () => navigator.serviceWorker.register("sw.js").catch(()=>{}));
+}
+
+boot();
+})();
+</script>
+</body>
+</html>
